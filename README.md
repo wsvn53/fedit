@@ -6,7 +6,8 @@ Plugin Version: 1.0.0
 
 #Install
 Run the bat file `install.bat` at root path, or:  
-Copy `Fedit/bin/Release/Fedit.dll` to `%My Documents%/Fiddler2/Scripts/`.
+Copy `Fedit/bin/Release/Fedit.dll` to `%My Documents%/Fiddler2/Scripts/`.  
+or copy to ``%Program Files%/Fiddler2/Scripts/` (Fiddler install path).
 
 #Usage
 1. Select one or more sessions in session list.
@@ -22,6 +23,7 @@ Add your favor editor for file type, e.g.
     .js     C:\\Program Files\Notepad++/notepad++.exe
     .txt    notepad
     .htm    C:\\Program Files\Notepad++/notepad++.exe
+**Notice** that, `filetype` must start with `.`  
 By default, there is a `default` editor for you `notepad`.
 
 # Contact

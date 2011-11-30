@@ -205,10 +205,10 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             li.SubItems[0].Text = txt_filetype.Text;
             li.SubItems.Add(txt_editor.Text);
             editor_list.Items.Add(li);
-            this.SaveEditorSetting();
             txt_filetype.Text = "";
             txt_editor.Text = "";
         }
+        this.SaveEditorSetting();
     }
 
     private void SaveEditorSetting() {
