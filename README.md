@@ -2,7 +2,7 @@
 `Fedit` is a plugin for [Fiddler](http://www.fiddler2.com/). You can use this plugin to edit response directly, instead of add AutoResponder rule manually.  
 This plugin required Fiddler version `2.1.1.3` or later.  
 
-Plugin Version: 1.0.0
+Plugin Version: 1.1.0
 
 #Install
 Run the bat file `install.bat` at root path, or:  
