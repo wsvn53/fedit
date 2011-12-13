@@ -1,7 +1,7 @@
 /**
  * Fedit for Fiddler
  * @author:  ethan.wang, wsvn53@gmail.com
- * @version: 1.0.0
+ * @version: 1.1.0
  * @date:    2011/11/29
  * 
  * This plugin required Fiddler version 2.1.1.3
@@ -32,6 +32,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
     private ListView editor_list;
     private TextBox txt_filetype;
     private TextBox txt_editor;
+    private OpenFileDialog file_editor;
 
     public Fedit()
     {
@@ -65,6 +66,11 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
 
         editor_setting = new Hashtable();
         editor_setting.Add("default", "notepad");
+        editor_setting.Add(".css", "notepad");
+        editor_setting.Add(".js", "notepad");
+        editor_setting.Add(".jpg", "mspaint");
+        editor_setting.Add(".png", "mspaint");
+        editor_setting.Add(".gif", "mspaint");
     }
 
     public void OnLoad()
@@ -116,9 +122,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
                 String editor_path = String.Join(" ", editor.ToArray());
                 if (editor_setting.ContainsKey(file_type))
                 {
-                    FiddlerApplication.Log.LogString(file_type);
                     editor_setting[file_type] = editor_path;
-                    FiddlerApplication.Log.LogString(file_type);
                 }
                 else
                 {
@@ -144,10 +148,19 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         txt_filetype.Top = 225;
         gp_editor.Controls.Add(txt_filetype);
         txt_editor = new TextBox();
-        txt_editor.Width = 295;
+        txt_editor.Width = 270;
         txt_editor.Top = 225;
         txt_editor.Left = 112;
         gp_editor.Controls.Add(txt_editor);
+        Button btn_browse = new Button();
+        btn_browse.Text = "..";
+        btn_browse.Width = 22;
+        btn_browse.Height = 22;
+        btn_browse.Top = 225;
+        btn_browse.Left = 385;
+        btn_browse.Click += new EventHandler(this.OnBrowseFile);
+        gp_editor.Controls.Add(btn_browse);
+        file_editor = new OpenFileDialog();
         Button btn_add = new Button();
         btn_add.Text = "Add/Mod";
         btn_add.Width = 80;
@@ -174,6 +187,20 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             editor_setting.Remove(eachItem.SubItems[0].Text);
         }
         this.SaveEditorSetting();
+    }
+
+    public void OnBrowseFile(object sender, EventArgs e)
+    {
+        if (file_editor.ShowDialog() == DialogResult.Cancel) return;
+        try
+        {
+            txt_editor.Text = file_editor.FileName;
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Error opening file", "File Error",
+            MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+        }
     }
 
     public void OnAddEditorItem(object sender, EventArgs e)
