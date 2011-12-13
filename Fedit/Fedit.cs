@@ -223,8 +223,18 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
     public void OnFeditClick(object sender, EventArgs e)
     {
         Session[] oSessions = FiddlerApplication.UI.GetSelectedSessions();
+        // enable AutoResponder
+        FiddlerApplication.oAutoResponder.IsEnabled = true;
+        FiddlerApplication.oAutoResponder.PermitFallthrough = true;
         foreach (Session oSession in oSessions)
         {
+            // check 304
+            FiddlerApplication.Log.LogString(oSession.responseCode.ToString());
+            if (oSession.responseCode.ToString() == "304") {
+                if (MessageBox.Show("This request session's ResponseCode is 304, means no data responded!\nContinue to Edit?", "Fedit Warning:",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)  return;
+            }
+
             String tmp_filetype;
             if (fileType.ContainsKey(oSession.oResponse.MIMEType.ToString()))
             {
@@ -239,7 +249,16 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             String tmp_filename = escaped_url.Substring(0, escaped_url.Length<150?escaped_url.Length:150) + tmp_filetype;
             String fedit_file = fedit_path + "\\" + tmp_filename;
             FiddlerApplication.Log.LogString("Saving url \"" + oSession.fullUrl + "\" to temp file \"" + fedit_file + "\"");
-            File.WriteAllBytes(fedit_file, oSession.responseBodyBytes);
+            if (oSession.oResponse.headers.ToString().ToLower().IndexOf("content-encoding:")>=0)
+            {
+                // if encoded, decode it
+                File.WriteAllBytes(fedit_file, System.Text.Encoding.Default.GetBytes(oSession.GetResponseBodyAsString()));
+            }
+            else
+            {
+                // else load bytes
+                File.WriteAllBytes(fedit_file, oSession.responseBodyBytes);
+            }
             FiddlerApplication.Log.LogString(tmp_filename);
             // add AotuResponse rule
             if (tmp_rules.ContainsKey(oSession.fullUrl))
@@ -256,13 +275,11 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             // edit file with default editor
             if (editor_setting.ContainsKey(tmp_filetype))
             {
-                //edit.StartInfo.FileName = editor_setting[tmp_filetype].ToString();
-                //edit.StartInfo.Arguments = fedit_file;
-                System.Diagnostics.Process.Start(editor_setting[tmp_filetype].ToString(), @fedit_file);
+                System.Diagnostics.Process.Start(editor_setting[tmp_filetype].ToString(), "\""+fedit_file+"\"");
             }
             else
             {
-                System.Diagnostics.Process.Start(editor_setting["default"].ToString(), fedit_file);
+                System.Diagnostics.Process.Start(editor_setting["default"].ToString(), "\"" + fedit_file + "\"");
             }
             FiddlerApplication.Log.LogString(fedit_file);
         }
