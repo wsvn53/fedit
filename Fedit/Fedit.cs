@@ -24,6 +24,7 @@ using System.Text.RegularExpressions;
 public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't see it!
 {
     private System.Windows.Forms.MenuItem miFedit;
+    private System.Windows.Forms.MenuItem miFeditWith;
     private Hashtable fileType;
     private Hashtable tmp_rules;
     private Hashtable editor_setting;
@@ -33,12 +34,21 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
     private TextBox txt_filetype;
     private TextBox txt_editor;
     private OpenFileDialog file_editor;
+    private String urlLeft;     // stored url left part without query params.
+    private Form paramsForm;
+    private CheckedListBox paramList;
+    private Session editWithSession;
+    private CheckBox chkJsonp;
 
     public Fedit()
     {
         this.miFedit = new System.Windows.Forms.MenuItem();
         this.miFedit.Text = "Edit";
         this.miFedit.Click += new System.EventHandler(this.OnFeditClick);
+
+        this.miFeditWith = new System.Windows.Forms.MenuItem();
+        this.miFeditWith.Text = "Edit with Parameters..";
+        this.miFeditWith.Click += new System.EventHandler(this.OnFeditWithClick);
 
         // init HashTable
         fileType = new System.Collections.Hashtable();
@@ -78,8 +88,23 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         // add context menu item
         FiddlerApplication.Log.LogString("Fedit extension loaded.");
         FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(0, this.miFedit);
+        FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(1, this.miFeditWith);
         MenuItem miFeditSpit = new MenuItem("-");
-        FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(1, miFeditSpit);
+        FiddlerApplication.UI.mnuSessionContext.MenuItems.Add(2, miFeditSpit);
+        // add response process function, for jsonp request replacement.
+        Fiddler.FiddlerApplication.BeforeResponse += delegate(Fiddler.Session oS)
+        {
+            oS.utilDecodeResponse();
+            // find which rule match this url.
+            /*
+            foreach (Fiddler.ResponderRule rule in tmp_rules)
+            {
+                FiddlerApplication.Log.LogString(rule.sMatch);
+                // Fiddler.FiddlerApplication.UI.
+                // oS.utilReplaceInResponse("json", "xxxx");
+            }
+             */
+        };
         // add setting tabpage
         TabPage fedit_tab = new TabPage("Fedit");
         // add a group: Editor
@@ -87,14 +112,12 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         gp_editor.Text = "Editor Associate";
         gp_editor.Width = 500;
         gp_editor.Height = 255;
-        gp_editor.Left = 10;
-        gp_editor.Top = 10;
+        gp_editor.Location = new Point(10, 10);
         // add a listview
         editor_list = new ListView();
         editor_list.Width = 480;
         editor_list.Height = 200;
-        editor_list.Left = 10;
-        editor_list.Top = 20;
+        editor_list.Location = new Point(10, 20);
         editor_list.GridLines = true;
         editor_list.FullRowSelect = true;
         editor_list.View = View.Details;
@@ -144,20 +167,17 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         // add input box
         txt_filetype = new TextBox();
         txt_filetype.Width = 100;
-        txt_filetype.Left = 10;
-        txt_filetype.Top = 225;
+        txt_filetype.Location = new Point(10, 225);
         gp_editor.Controls.Add(txt_filetype);
         txt_editor = new TextBox();
         txt_editor.Width = 270;
-        txt_editor.Top = 225;
-        txt_editor.Left = 112;
+        txt_editor.Location = new Point(112, 225);
         gp_editor.Controls.Add(txt_editor);
         Button btn_browse = new Button();
         btn_browse.Text = "..";
         btn_browse.Width = 22;
         btn_browse.Height = 22;
-        btn_browse.Top = 225;
-        btn_browse.Left = 385;
+        btn_browse.Location = new Point(385, 225);
         btn_browse.Click += new EventHandler(this.OnBrowseFile);
         gp_editor.Controls.Add(btn_browse);
         file_editor = new OpenFileDialog();
@@ -165,8 +185,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         btn_add.Text = "Add/Mod";
         btn_add.Width = 80;
         btn_add.Height = 22;
-        btn_add.Top = 225;
-        btn_add.Left = 410;
+        btn_add.Location = new Point(410, 225);
         btn_add.Click += new EventHandler(this.OnAddEditorItem);
         gp_editor.Controls.Add(btn_add);
 
@@ -255,61 +274,189 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         FiddlerApplication.oAutoResponder.PermitFallthrough = true;
         foreach (Session oSession in oSessions)
         {
-            // check 304
-            FiddlerApplication.Log.LogString(oSession.responseCode.ToString());
-            if (oSession.responseCode.ToString() == "304") {
-                if (MessageBox.Show("This request session's ResponseCode is 304, means no data responded!\nContinue to Edit?", "Fedit Warning:",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)  return;
-            }
-
-            String tmp_filetype;
-            if (fileType.ContainsKey(oSession.oResponse.MIMEType.ToString()))
-            {
-                tmp_filetype = (String)fileType[oSession.oResponse.MIMEType.ToString()];
-            }
-            else
-            {
-                Stack<string> ext = new Stack<string>(oSession.fullUrl.Split(new string[]{ "." }, StringSplitOptions.None));
-                tmp_filetype = "." + Regex.Replace(ext.Pop(), @"([a-zA-Z\d]+?)[^a-zA-Z\d].+", "$1");
-            }
-            String escaped_url = System.Uri.EscapeDataString(oSession.fullUrl);
-            String tmp_filename = escaped_url.Substring(0, escaped_url.Length<150?escaped_url.Length:150) + tmp_filetype;
-            String fedit_file = fedit_path + "\\" + tmp_filename;
-            FiddlerApplication.Log.LogString("Saving url \"" + oSession.fullUrl + "\" to temp file \"" + fedit_file + "\"");
-            if (oSession.oResponse.headers.ToString().ToLower().IndexOf("content-encoding:")>=0)
-            {
-                // if encoded, decode it
-                File.WriteAllBytes(fedit_file, System.Text.Encoding.Default.GetBytes(oSession.GetResponseBodyAsString()));
-            }
-            else
-            {
-                // else load bytes
-                File.WriteAllBytes(fedit_file, oSession.responseBodyBytes);
-            }
-            FiddlerApplication.Log.LogString(tmp_filename);
-            // add AotuResponse rule
-            if (tmp_rules.ContainsKey(oSession.fullUrl))
-            {
-                FiddlerApplication.oAutoResponder.RemoveRule((Fiddler.ResponderRule)tmp_rules[oSession.fullUrl]);
-            }
-            else
-            {
-                tmp_rules.Add(oSession.fullUrl, "");
-            }
-            tmp_rules[oSession.fullUrl] = (Fiddler.ResponderRule)FiddlerApplication.oAutoResponder.AddRule("EXACT:" + oSession.fullUrl, fedit_file, true);
-
-            FiddlerApplication.Log.LogString("Open file \"" + fedit_file + "\"");
-            // edit file with default editor
-            if (editor_setting.ContainsKey(tmp_filetype))
-            {
-                System.Diagnostics.Process.Start(editor_setting[tmp_filetype].ToString(), "\""+fedit_file+"\"");
-            }
-            else
-            {
-                System.Diagnostics.Process.Start(editor_setting["default"].ToString(), "\"" + fedit_file + "\"");
-            }
-            FiddlerApplication.Log.LogString(fedit_file);
+            this.processRuleForSession(oSession, "");
         }
+    }
+
+    private void processRuleForSession(Session oSession, String ruleStr)
+    {
+        // check 304
+        FiddlerApplication.Log.LogString(oSession.responseCode.ToString());
+        if (oSession.responseCode.ToString() == "304")
+        {
+            if (MessageBox.Show("This request session's ResponseCode is 304, means no data responded!\nContinue to Edit?", "Fedit Warning:",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No) return;
+        }
+
+        // check encode type
+        FiddlerApplication.Log.LogString(oSession.GetResponseBodyEncoding().ToString());
+
+        String tmp_filetype;
+        if (fileType.ContainsKey(oSession.oResponse.MIMEType.ToString()))
+        {
+            tmp_filetype = (String)fileType[oSession.oResponse.MIMEType.ToString()];
+        }
+        else
+        {
+            Stack<string> ext = new Stack<string>(oSession.fullUrl.Split(new string[] { "." }, StringSplitOptions.None));
+            tmp_filetype = "." + Regex.Replace(ext.Pop(), @"([a-zA-Z\d]+?)[^a-zA-Z\d].+", "$1");
+        }
+        String escaped_url = System.Uri.EscapeDataString(oSession.fullUrl);
+        String tmp_filename = escaped_url.Substring(0, escaped_url.Length < 150 ? escaped_url.Length : 150) + tmp_filetype;
+        String fedit_file = fedit_path + "\\" + tmp_filename;
+        FiddlerApplication.Log.LogString("Saving url \"" + oSession.fullUrl + "\" to temp file \"" + fedit_file + "\"");
+        if (oSession.oResponse.headers.ToString().ToLower().IndexOf("content-encoding:") >= 0)
+        {
+            // if encoded, decode it
+            File.WriteAllBytes(fedit_file, System.Text.Encoding.Default.GetBytes(oSession.GetResponseBodyAsString()));
+        }
+        else
+        {
+            // else load bytes
+            File.WriteAllBytes(fedit_file, oSession.responseBodyBytes);
+        }
+        FiddlerApplication.Log.LogString(tmp_filename);
+        // add AotuResponse rule
+        if (tmp_rules.ContainsKey(oSession.fullUrl))
+        {
+            FiddlerApplication.oAutoResponder.RemoveRule((Fiddler.ResponderRule)tmp_rules[oSession.fullUrl]);
+        }
+        else
+        {
+            tmp_rules.Add(oSession.fullUrl, "");
+        }
+        tmp_rules[oSession.fullUrl] = (Fiddler.ResponderRule)FiddlerApplication.oAutoResponder.AddRule((ruleStr==""||ruleStr==null)?"EXACT:" + oSession.fullUrl:ruleStr, fedit_file, true);
+        if(!FiddlerApplication.oAutoResponder.IsEnabled)
+            MessageBox.Show("Notice! AutoResponder is not enabled! Please enable this.");
+
+        FiddlerApplication.Log.LogString("Open file \"" + fedit_file + "\"");
+        // edit file with default editor
+        if (editor_setting.ContainsKey(tmp_filetype))
+        {
+            System.Diagnostics.Process.Start(editor_setting[tmp_filetype].ToString(), "\"" + fedit_file + "\"");
+        }
+        else
+        {
+            System.Diagnostics.Process.Start(editor_setting["default"].ToString(), "\"" + fedit_file + "\"");
+        }
+        FiddlerApplication.Log.LogString(fedit_file);
+    }
+
+    public void OnFeditWithClick(object sender, EventArgs e)
+    {
+        Session[] oSessions = FiddlerApplication.UI.GetSelectedSessions();
+       foreach (Session oSession in oSessions)
+       {
+            String[] url = oSession.fullUrl.Split('?');
+            urlLeft = "";
+            if (url.Length > 1)
+            {
+                String[] urlParams = url[url.Length - 1].Split('&');
+                String[] urlLeftArr = new String[url.Length - 1];
+                Array.Copy(url, 0, urlLeftArr, 0, url.Length - 1);
+                urlLeft = String.Join("?", urlLeftArr);
+                FiddlerApplication.Log.LogString("Left: " + urlLeft.ToString());
+                FiddlerApplication.Log.LogString("Parameters: " + String.Join("&", urlParams).ToString());
+                editWithSession = oSession;
+                this.showEditParams(urlParams);
+            }
+            else
+            {
+                MessageBox.Show("No query parameters found in the following url, please 'Edit' directly. \n" + oSession.fullUrl);
+            }
+        }
+    }
+
+    private void showEditParams(String[] urlParams)
+    {
+        paramsForm = new Form();
+        paramsForm.Width = 560;
+        paramsForm.Height = 440;
+        paramsForm.Text = "Please select parameters to edit..";
+        paramsForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+        paramsForm.StartPosition = FormStartPosition.CenterParent;
+        paramsForm.MinimizeBox = false;
+        paramsForm.MaximizeBox = false;
+
+        // add url label
+        TextBox txtUrl = new TextBox();
+        txtUrl.ReadOnly = true;
+        txtUrl.Location = new Point(20, 10);
+        txtUrl.Width = paramsForm.Width - 40;
+        txtUrl.Text = editWithSession.fullUrl;
+        paramsForm.Controls.Add(txtUrl);
+
+        // jsonp type option
+        chkJsonp = new CheckBox();
+        chkJsonp.Text = "Is this a JSONP request? I'll replace response body with the value you selected.";
+        chkJsonp.Location = new Point(20, 40);
+        chkJsonp.Width = paramsForm.Width - 40;
+        chkJsonp.BackColor = Color.DarkOrange;
+        paramsForm.Controls.Add(chkJsonp);
+
+        // add params ui
+        paramList = new CheckedListBox();
+        paramList.Location = new Point(20, 70);
+        paramList.Width = paramsForm.Width - 40;
+        paramList.Height = 300;
+        paramList.Items.AddRange(urlParams);
+        //paramList.CheckOnClick = true;
+
+        for (int i = 0; i < paramList.Items.Count; i++)
+        {
+            paramList.SetItemChecked(i, true);
+        }
+
+        paramsForm.Controls.Add(paramList);
+
+        // add "Edit it!" button
+        Button btn_go = new Button();
+        btn_go.Text = "Edit it!";
+        btn_go.Width = 250;
+        btn_go.Height = 22;
+        btn_go.Location = new Point(paramsForm.Width / 2 - btn_go.Width / 2, 370);
+        btn_go.Click += new EventHandler(this.OnFeditParamsWithClick);
+        paramsForm.Controls.Add(btn_go);
+
+        paramsForm.AcceptButton = btn_go;
+        paramList.Focus();
+
+        paramsForm.ShowDialog();
+    }
+
+    public void OnFeditParamsWithClick(object sender, EventArgs e)
+    {
+        String ruleStr = "regex:(?insx)" + urlLeft.Replace("?", "\\?").Replace(".", "\\.").Replace("-", "\\-") + "\\?";
+        for (int i = 0; i < paramList.Items.Count;i++ )
+        {
+            if (paramList.GetItemChecked(i))
+            {
+                ruleStr += paramList.Items[i].ToString().Replace("?", "\\?").Replace(".", "\\.").Replace("-", "\\-");
+            }
+            else
+            {
+                // use regexp to ignore this parameter
+                ruleStr += "[^&]+?";
+            }
+            if (i < paramList.Items.Count - 1)
+            {
+                // add "&"
+                ruleStr += "\\&";
+            }
+        }
+
+        ruleStr += "$";
+
+        // check jsonp request
+        if (chkJsonp.Checked&&paramList.SelectedItems.Count>0)
+        {
+            String[] sel = paramList.SelectedItem.ToString().Split('=');
+            ruleStr += " #jsonp:" + sel[sel.Length - 1];
+        }
+
+        MessageBox.Show(ruleStr);
+        this.processRuleForSession(editWithSession, ruleStr);
+        paramsForm.Close();
     }
 
     public void OnBeforeUnload()

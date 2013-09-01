@@ -18,3 +18,13 @@ Z:\github\Fedit\Fedit\bin\Release\Xceed.Compression.Formats.dll
 Z:\github\Fedit\Fedit\obj\Release\ResolveAssemblyReference.cache
 Z:\github\Fedit\Fedit\obj\Release\Fedit.dll
 Z:\github\Fedit\Fedit\obj\Release\Fedit.pdb
+\\psf\Home\github\fedit\Fedit\bin\Release\Fedit.dll
+\\psf\Home\github\fedit\Fedit\bin\Release\Fedit.pdb
+\\psf\Home\github\fedit\Fedit\bin\Release\Fiddler.exe
+\\psf\Home\github\fedit\Fedit\bin\Release\Xceed.FileSystem.dll
+\\psf\Home\github\fedit\Fedit\bin\Release\Xceed.Zip.dll
+\\psf\Home\github\fedit\Fedit\bin\Release\Xceed.Compression.dll
+\\psf\Home\github\fedit\Fedit\bin\Release\Xceed.Compression.Formats.dll
+\\psf\Home\github\fedit\Fedit\obj\Release\ResolveAssemblyReference.cache
+\\psf\Home\github\fedit\Fedit\obj\Release\Fedit.dll
+\\psf\Home\github\fedit\Fedit\obj\Release\Fedit.pdb
