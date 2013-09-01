@@ -95,7 +95,6 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         // add response process function, for jsonp request replacement.
         Fiddler.FiddlerApplication.BeforeResponse += delegate(Fiddler.Session oS)
         {
-            oS.utilDecodeResponse();
             // find which rule match this url.
             foreach (Fiddler.ResponderRule rule in tmp_rules.Values)
             {
@@ -309,6 +308,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
 
     private void processRuleForSession(Session oSession, String ruleStr)
     {
+        oSession.utilDecodeResponse();
         // check 304
         FiddlerApplication.Log.LogString(oSession.responseCode.ToString());
         if (oSession.responseCode.ToString() == "304")
@@ -337,7 +337,8 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         if (oSession.oResponse.headers.ToString().ToLower().IndexOf("content-encoding:") >= 0)
         {
             // if encoded, decode it
-            File.WriteAllBytes(fedit_file, System.Text.Encoding.Default.GetBytes(oSession.GetResponseBodyAsString()));
+
+            File.WriteAllBytes(fedit_file, oSession.responseBodyBytes);
         }
         else
         {
