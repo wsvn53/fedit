@@ -1,6 +1,6 @@
 # Update ver-2.0.0
-1. Support edit request matched selected parameters;
-* Support edit jsonp request;
+1. Support edit request matched selected parameters, you can edit `json` request now;
+* Support edit `jsonp` request;
 * Fix install.bat script;
 
 # Overview
