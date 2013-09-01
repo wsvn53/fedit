@@ -126,7 +126,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         GroupBox gp_editor = new GroupBox();
         gp_editor.Text = "Editor Associate";
         gp_editor.Width = 500;
-        gp_editor.Height = 255;
+        gp_editor.Height = 300;
         gp_editor.Location = new Point(10, 10);
         // add a listview
         editor_list = new ListView();
@@ -203,7 +203,21 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         btn_add.Location = new Point(410, 225);
         btn_add.Click += new EventHandler(this.OnAddEditorItem);
         gp_editor.Controls.Add(btn_add);
-
+        // copyright
+        Label copyRight = new Label();
+        copyRight.Width = 400;
+        copyRight.Height = 18;
+        copyRight.Location = new Point(10, 258);
+        copyRight.Text = "Developed by Ethan(http://imethan.com/).";
+        gp_editor.Controls.Add(copyRight);
+        // source code
+        Label lblSrc = new Label();
+        lblSrc.Width = 400;
+        lblSrc.Height = 18;
+        lblSrc.Location = new Point(10, 276);
+        lblSrc.Text = "Source code: https://github.com/wsvn53/fedit.";
+        gp_editor.Controls.Add(lblSrc);
+        
         fedit_tab.Controls.Add(gp_editor);
         FiddlerApplication.UI.tabsViews.TabPages.Add(fedit_tab);
         // Load rules from files
