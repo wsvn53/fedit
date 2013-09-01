@@ -1,8 +1,9 @@
 /**
  * Fedit for Fiddler
  * @author:  ethan.wang, wsvn53@gmail.com
- * @version: 1.1.0
+ * @version: 2.0.0
  * @date:    2011/11/29
+ * @update : 2013/09/01
  * 
  * This plugin required Fiddler version 2.1.1.3
  * 
@@ -96,14 +97,28 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         {
             oS.utilDecodeResponse();
             // find which rule match this url.
-            /*
-            foreach (Fiddler.ResponderRule rule in tmp_rules)
+            foreach (Fiddler.ResponderRule rule in tmp_rules.Values)
             {
-                FiddlerApplication.Log.LogString(rule.sMatch);
-                // Fiddler.FiddlerApplication.UI.
-                // oS.utilReplaceInResponse("json", "xxxx");
+                FiddlerApplication.Log.LogString(rule.bDisableOnMatch.ToString());
+                if (!rule.bDisableOnMatch&&rule.sMatch.IndexOf("regex:")>-1&&rule.sMatch.IndexOf("#jsonp:")>-1)
+                {
+                    String[] regexSplit = Regex.Split(rule.sMatch, "regex:");
+                    Regex regex = new Regex(regexSplit[1]);
+                    if (regex.IsMatch(oS.fullUrl))
+                    {
+                        FiddlerApplication.Log.LogString("Matched JSONP rule: " + oS.fullUrl);
+                        String[] jsonpInfo = Regex.Split(rule.sMatch, "#jsonp:")[1].Split('=');
+                        String replaceKey = jsonpInfo[0];
+                        String replaceValue = jsonpInfo[1];
+                        Regex toReg = new Regex(replaceKey + "=([^&]+)");
+                        Match toMatch = toReg.Match(oS.fullUrl);
+                        String replaceTo = toMatch.Groups[1].Value;
+                        FiddlerApplication.Log.LogString("Will replace '"+ replaceValue +"' to '" + replaceTo + "'..");
+                        oS.utilReplaceInResponse(replaceValue, replaceTo);
+                        break;
+                    }
+                }
             }
-             */
         };
         // add setting tabpage
         TabPage fedit_tab = new TabPage("Fedit");
@@ -426,7 +441,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
 
     public void OnFeditParamsWithClick(object sender, EventArgs e)
     {
-        String ruleStr = "regex:(?insx)" + urlLeft.Replace("?", "\\?").Replace(".", "\\.").Replace("-", "\\-") + "\\?";
+        String ruleStr = "regex:(?insx)^" + urlLeft.Replace("?", "\\?").Replace(".", "\\.").Replace("-", "\\-") + "\\?";
         for (int i = 0; i < paramList.Items.Count;i++ )
         {
             if (paramList.GetItemChecked(i))
@@ -436,12 +451,12 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             else
             {
                 // use regexp to ignore this parameter
-                ruleStr += "[^&]+?";
+                ruleStr += "[^&]+";
             }
             if (i < paramList.Items.Count - 1)
             {
                 // add "&"
-                ruleStr += "\\&";
+                ruleStr += "&";
             }
         }
 
@@ -450,11 +465,19 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         // check jsonp request
         if (chkJsonp.Checked&&paramList.SelectedItems.Count>0)
         {
-            String[] sel = paramList.SelectedItem.ToString().Split('=');
-            ruleStr += " #jsonp:" + sel[sel.Length - 1];
+            if (!paramList.GetItemChecked(paramList.SelectedIndex))
+            {
+                //String[] sel = paramList.SelectedItem.ToString().Split('=');
+                ruleStr += " #jsonp:" + paramList.SelectedItem.ToString();
+            }
+            else
+            {
+                MessageBox.Show("JSONP callback parameter must be unchecked!");
+                return;
+            }
         }
 
-        MessageBox.Show(ruleStr);
+        FiddlerApplication.Log.LogString("Rule: " + ruleStr);
         this.processRuleForSession(editWithSession, ruleStr);
         paramsForm.Close();
     }
