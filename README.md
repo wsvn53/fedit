@@ -3,7 +3,7 @@
 * Support edit `jsonp` request, will replace callback function automatically;
 * Fix install.bat script;
 
-  [download 2.0.0.zip](https://github.com/wsvn53/fedit/archive/2.0.0.zip)
+  [download 2.0.0.zip](https://github.com/wsvn53/fedit/archive/2.0.0.zip)    [demo here](#demo)
 
 # Overview
 `Fedit` is a plugin for [Fiddler](http://www.fiddler2.com/). You can use this plugin to edit response directly, instead of add AutoResponder rule manually.  
@@ -22,17 +22,6 @@ If success, u will see a `Fedit` tab at the right of Fiddler application.
 
 **Note:** You do not need to remove AutoResponder rule or delete the temporary file, it will clean automatically when next time you start up Fiddler.
 
-# Setting
-If installed correctly, you will see a tab page at left side of fiddler named "Fedit".  
-Add your favor editor for file type, e.g. 
-    default notepad
-    .css    notepad
-    .js     C:\\Program Files\Notepad++/notepad++.exe
-    .txt    notepad
-    .htm    C:\\Program Files\Notepad++/notepad++.exe
-**Notice** that, `filetype` must start with `.`  
-By default, there is a `default` editor for you `notepad`.
-
 # Demo
 1. Edit .htm:    
   ![image](https://raw.github.com/wsvn53/fedit/master/images/demo.1.1.png)   
@@ -44,6 +33,17 @@ By default, there is a `default` editor for you `notepad`.
   ![image](https://raw.github.com/wsvn53/fedit/master/images/demo.2.2.png)    
   ![image](https://raw.github.com/wsvn53/fedit/master/images/demo.2.3.png)    
   ![image](https://raw.github.com/wsvn53/fedit/master/images/demo.2.4.png)
+
+# Setting
+If installed correctly, you will see a tab page at left side of fiddler named "Fedit".  
+Add your favor editor for file type, e.g. 
+    default notepad
+    .css    notepad
+    .js     C:\\Program Files\Notepad++/notepad++.exe
+    .txt    notepad
+    .htm    C:\\Program Files\Notepad++/notepad++.exe
+**Notice** that, `filetype` must start with `.`  
+By default, there is a `default` editor for you `notepad`.
 
 # Contact
 * Twitter:&nbsp; [@ethan168](https://twitter.com/ethan168)
