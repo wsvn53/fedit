@@ -1,4 +1,4 @@
-# Update ver-2.0.0
+# Update ver-2.0.0 [download 2.0.0.zip](https://github.com/wsvn53/fedit/archive/2.0.0.zip)
 1. Support edit request matched selected parameters, you can edit `json` request now;
 * Support edit `jsonp` request, will replace callback function automatically;
 * Fix install.bat script;
