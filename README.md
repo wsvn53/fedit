@@ -1,7 +1,9 @@
-# Update ver-2.0.0 [download 2.0.0.zip](https://github.com/wsvn53/fedit/archive/2.0.0.zip)
+# Update ver-2.0.0 
 1. Support edit request matched selected parameters, you can edit `json` request now;
 * Support edit `jsonp` request, will replace callback function automatically;
 * Fix install.bat script;
+
+[download 2.0.0.zip](https://github.com/wsvn53/fedit/archive/2.0.0.zip)
 
 # Overview
 `Fedit` is a plugin for [Fiddler](http://www.fiddler2.com/). You can use this plugin to edit response directly, instead of add AutoResponder rule manually.  
