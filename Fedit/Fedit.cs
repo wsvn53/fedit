@@ -98,7 +98,6 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             // find which rule match this url.
             foreach (Fiddler.ResponderRule rule in tmp_rules.Values)
             {
-                FiddlerApplication.Log.LogString(rule.bDisableOnMatch.ToString());
                 if (!rule.bDisableOnMatch&&rule.sMatch.IndexOf("regex:")>-1&&rule.sMatch.IndexOf("#jsonp:")>-1)
                 {
                     String[] regexSplit = Regex.Split(rule.sMatch, "regex:");
@@ -310,7 +309,6 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
     {
         oSession.utilDecodeResponse();
         // check 304
-        FiddlerApplication.Log.LogString(oSession.responseCode.ToString());
         if (oSession.responseCode.ToString() == "304")
         {
             if (MessageBox.Show("This request session's ResponseCode is 304, means no data responded!\nContinue to Edit?", "Fedit Warning:",
@@ -337,7 +335,6 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
         if (oSession.oResponse.headers.ToString().ToLower().IndexOf("content-encoding:") >= 0)
         {
             // if encoded, decode it
-
             File.WriteAllBytes(fedit_file, oSession.responseBodyBytes);
         }
         else
@@ -487,7 +484,7 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             }
             else
             {
-                MessageBox.Show("JSONP callback parameter must be unchecked!");
+                MessageBox.Show("JSONP callback parameter must be unchecked!", "Notice:", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
         }
