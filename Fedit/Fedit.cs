@@ -98,7 +98,15 @@ public class Fedit : IAutoTamper    // Ensure class is public, or Fiddler won't 
             // find which rule match this url.
             foreach (Fiddler.ResponderRule rule in tmp_rules.Values)
             {
-                if (!rule.bDisableOnMatch&&rule.sMatch.IndexOf("regex:")>-1&&rule.sMatch.IndexOf("#jsonp:")>-1)
+                bool ruleDisable = false;
+                System.Reflection.PropertyInfo p = rule.GetType().GetProperty("bDisableOnMatch", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if(p!=null)
+                {
+                    // FiddlerApplication.Log.LogString("Using rule.bDisableOnMatch.");
+                    // some version of fidller2 maybe have no bDisableOnMatch.
+                    ruleDisable = (bool)p.GetValue(rule, null);
+                }
+                if (!ruleDisable&& rule.sMatch.IndexOf("regex:") > -1 && rule.sMatch.IndexOf("#jsonp:") > -1)
                 {
                     String[] regexSplit = Regex.Split(rule.sMatch, "regex:");
                     Regex regex = new Regex(regexSplit[1]);
